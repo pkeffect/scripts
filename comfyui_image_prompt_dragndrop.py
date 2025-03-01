@@ -1,108 +1,87 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox
-import torchocr
+from tkinterdnd2 import DND_FILES, TkinterDnD
 from PIL import Image, ImageTk
+import pyperclip
+import re
+from tkinter import filedialog, messagebox
 
-class ComfyUIApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("ComfyUI PNG Image Text Extractor")
-        self.root.geometry('786x786')
-        self.root.configure(bg="#111111")
+def drop_file(event):
+    """Handles the dropped file path."""
+    file_path = event.data  # File path as a string
+    open_file(file_path)
 
-        # Styling
-        style = {
-            "background": "#222222",
-            "foreground": "#FFFFFF",
-            "font": ("Helvetica", 12),
-        }
-
-        # Layout elements
-        self.create_widgets(style)
-
-    def create_widgets(self, style):
-        # Button for selecting a file
-        open_button = tk.Button(
-            self.root,
-            text="Select a ComfyUI Generated PNG File",
-            command=self.open_file,
-            bg=style["background"],
-            fg=style["foreground"]
-        )
-        open_button.pack(pady=20)
-
-        # Label to drag and drop an image
-        label = tk.Label(
-            self.root,
-            text="Drag & Drop an image on this text",
-            bg=style["background"],
-            fg=style["foreground"],
-            font=("Helvetica", 14)
-        )
-        label.pack(pady=20)
-
-        # Label to display the image
-        self.image_label = tk.Label(self.root, bg=style["background"])
-        self.image_label.pack()
-
-        # Text widget for displaying extracted text
-        self.text_widget = tk.Text(
-            self.root,
-            height=15,
-            width=80,
-            wrap=tk.WORD,
-            bg=style["background"],
-            fg=style["foreground"]
-        )
-        self.text_widget.config(state=tk.DISABLED)
-        self.text_widget.pack(pady=20)
-
-        # Button to copy the text
-        copy_button = tk.Button(
-            self.root,
-            text="Copy Text",
-            command=self.copy_text,
-            bg=style["background"],
-            fg=style["foreground"]
-        )
-        copy_button.pack(pady=20)
-
-    def open_file(self):
-        file_path = filedialog.askopenfilename(filetypes=[("PNG files", "*.png")])
-        if file_path:
-            self.display_image(file_path)
-            extracted_text = self.extract_text_from_image(file_path)
-            self.text_widget.config(state=tk.NORMAL)
-            self.text_widget.delete(1.0, tk.END)
-            self.text_widget.insert(tk.END, extracted_text)
-            self.text_widget.config(state=tk.DISABLED)
-
-    def display_image(self, file_path):
-        image = Image.open(file_path)
-        photo = ImageTk.PhotoImage(image)
-        self.image_label.configure(image=photo)
-        self.image_label.image = photo
-
-    def extract_text_from_image(self, file_path):
-        # Load the model
-        model = torchocr.Recognizer("path/to/your/model.pth")
-
-        # Read the image
-        image = Image.open(file_path)
-
-        # Perform OCR
-        result = model.rec(image)
-        extracted_text = "\n".join([text for text, score in result])
+def open_file(filepath=None):
+    try:
+        if not filepath:
+            filepath = filedialog.askopenfilename(filetypes=[("PNG files", "*.png")])
+        if not filepath:
+            return
         
-        return extracted_text
+        img = Image.open(filepath)
+        img.thumbnail((300, 200))
+        tk_img = ImageTk.PhotoImage(img)
+        image_label.config(image=tk_img)
+        image_label.image = tk_img
 
-    def copy_text(self):
-        text = self.text_widget.get(1.0, tk.END)
-        root.clipboard_clear()
-        root.clipboard_append(text)
+        with open(filepath, "rb") as file:
+            image_data = file.read()
+        
+        json_start = image_data.find(b'"text": "') + len(b'"text": "')
+        json_end = image_data.find(b'",', json_start)
+
+        if json_start != -1 and json_end != -1:
+            extracted_text = image_data[json_start:json_end].decode('utf-8').strip('"')
+            text_widget.config(state=tk.NORMAL)
+            text_widget.delete(1.0, tk.END)
+            text_widget.insert(tk.END, extracted_text)
+            text_widget.config(state=tk.DISABLED)
+        else:
+            messagebox.showerror("Error", "Text not found in image.")
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to load image: {e}")
+
+def copy_text():
+    try:
+        if text_widget.get(1.0, tk.END).strip() == "":
+            raise ValueError("No text to copy.")
+        
+        cleaned_text = re.sub(r'\s+', ' ', text_widget.get(1.0, tk.END))
+        pyperclip.copy(cleaned_text)
         messagebox.showinfo("Success", "Text copied to clipboard!")
+    except Exception as e:
+        messagebox.showerror("Error", str(e))
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = ComfyUIApp(root)
-    root.mainloop()
+# Create the main window
+root = TkinterDnD.Tk()
+root.title("ComfyUI PNG Image Text Extractor")
+root.geometry('786x786')
+root.configure(bg="#111111")
+
+# Styling
+style = {
+    "background": "#222222",
+    "foreground": "#FFFFFF",
+    "font": ("Helvetica", 12),
+}
+
+open_button = tk.Button(root, text="Select a ComfyUI Generated PNG File", command=open_file, bg=style["background"], fg=style["foreground"])
+open_button.pack(pady=20)
+
+label = tk.Label(root, text="Drag & Drop an image on this text", bg=style["background"], fg=style["foreground"])
+label.pack(pady=20)
+
+image_label = tk.Label(root, bg=style["background"])
+image_label.pack()
+
+text_widget = tk.Text(root, height=15, width=80, wrap=tk.WORD, bg=style["background"], fg=style["foreground"])
+text_widget.config(state=tk.DISABLED)
+text_widget.pack(pady=20)
+
+copy_button = tk.Button(root, text="Copy Text", command=copy_text, bg=style["background"], fg=style["foreground"])
+copy_button.pack(pady=5)
+
+# Enable drop events
+label.drop_target_register(DND_FILES)
+label.dnd_bind("<<Drop>>", drop_file)
+
+root.mainloop()
