@@ -2,7 +2,7 @@
 
 A powerful side-by-side file comparison tool built with Python and CustomTkinter.
 
-![GitDiff Viewer Screenshot](https://via.placeholder.com/800x450.png?text=GitDiff+Viewer+Screenshot)
+![Diff Viewer Screenshot](https://via.placeholder.com/800x450.png?text=GitDiff+Viewer+Screenshot)
 
 ## ✨ Features
 
