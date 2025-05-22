@@ -1,0 +1,5 @@
+# Basic Python Project Requirements
+customtkinter 
+Pygments
+tkinterdnd2-Universal 
+autopep8
