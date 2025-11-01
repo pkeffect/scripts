@@ -17,6 +17,26 @@ $EXCLUSIONS = @(
     'thumbs.db'
 )
 
+# Statistics tracking
+$script:totalFiles = 0
+$script:totalDirs = 0
+$script:totalSize = 0
+
+function Format-Size {
+    param([long]$SizeBytes)
+    
+    $units = @("B", "KB", "MB", "GB", "TB")
+    $unitIndex = 0
+    $size = [double]$SizeBytes
+    
+    while ($size -ge 1024 -and $unitIndex -lt 4) {
+        $size = $size / 1024
+        $unitIndex++
+    }
+    
+    return "{0:N2} {1}" -f $size, $units[$unitIndex]
+}
+
 Write-Host "Generating project structure..."
 
 function Process-Directory {
@@ -52,22 +72,30 @@ function Process-Directory {
         $item = $sortedItems[$i]
         $isLast = ($i -eq ($totalItems - 1))
 
-        # Determine connector and child prefix
+        # Determine connector and child prefix using Unicode characters
         if ($isLast) {
-            $connector = "└── "
+            $connector = [char]0x2514 + [char]0x2500 + [char]0x2500 + " "  # └──
             $childPrefix = "    "
         }
         else {
-            $connector = "├── "
-            $childPrefix = "│   "
+            $connector = [char]0x251C + [char]0x2500 + [char]0x2500 + " "  # ├──
+            $childPrefix = [char]0x2502 + "   "  # │
         }
 
         if ($item.PSIsContainer) {
+            $script:totalDirs++
             $FileHandle.WriteLine("${ParentPrefix}${connector}$($item.Name)/")
             # Recursive call for subdirectory
             Process-Directory -CurrentDir $item.FullName -ParentPrefix "${ParentPrefix}${childPrefix}" -FileHandle $FileHandle
         }
         else {
+            $script:totalFiles++
+            try {
+                $script:totalSize += $item.Length
+            }
+            catch {
+                # Skip if can't get file size
+            }
             $FileHandle.WriteLine("${ParentPrefix}${connector}$($item.Name)")
         }
     }
@@ -75,11 +103,9 @@ function Process-Directory {
 
 # Main execution
 try {
-    # Create output file with UTF-8 encoding
-    $streamWriter = New-Object System.IO.StreamWriter($OUTPUT_FILE, $false, [System.Text.Encoding]::UTF8)
-    
-    # Write header
-    $streamWriter.WriteLine("# Project Directory Structure & Files")
+    # Create temporary file for tree structure
+    $tempFile = "$OUTPUT_FILE.tmp"
+    $streamWriter = New-Object System.IO.StreamWriter($tempFile, $false, [System.Text.Encoding]::UTF8)
     
     # Get and write root directory name
     $rootDirName = Split-Path -Leaf (Get-Location)
@@ -88,10 +114,31 @@ try {
     # Start recursive processing
     Process-Directory -CurrentDir "." -ParentPrefix "" -FileHandle $streamWriter
     
-    # Close the file
+    # Close the temp file
     $streamWriter.Close()
     
+    # Read temp file content
+    $treeContent = Get-Content -Path $tempFile -Raw -Encoding UTF8
+    
+    # Write final output with stats at top
+    $finalWriter = New-Object System.IO.StreamWriter($OUTPUT_FILE, $false, [System.Text.Encoding]::UTF8)
+    $finalWriter.WriteLine("# Project Directory Structure & Files")
+    $finalWriter.WriteLine("")
+    $finalWriter.WriteLine("# Statistics")
+    $finalWriter.WriteLine("Total Directories: $script:totalDirs")
+    $finalWriter.WriteLine("Total Files: $script:totalFiles")
+    $finalWriter.WriteLine("Total Size: $(Format-Size $script:totalSize)")
+    $finalWriter.WriteLine("")
+    $finalWriter.Write($treeContent)
+    $finalWriter.Close()
+    
+    # Cleanup temp file
+    Remove-Item $tempFile -Force
+    
     Write-Host "`nProject structure successfully saved to $OUTPUT_FILE"
+    Write-Host "Total Directories: $script:totalDirs"
+    Write-Host "Total Files: $script:totalFiles"
+    Write-Host "Total Size: $(Format-Size $script:totalSize)"
 }
 catch {
     Write-Host "Error writing to file ${OUTPUT_FILE}: $_"

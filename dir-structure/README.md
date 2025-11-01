@@ -42,6 +42,12 @@ dir-structure.bat
 
 ```
 # Project Directory Structure & Files
+
+# Statistics
+Total Directories: 4
+Total Files: 9
+Total Size: 1.23 MB
+
 my-project/
 ├── index.html
 ├── package.json
@@ -79,6 +85,7 @@ The generated `project-structure.txt` file contains:
 - Complete tree with proper indentation
 - Files listed before directories at each level
 - Unix-style tree characters (`├──`, `└──`, `│`)
+- Statistics summary (total directories, files, and size)
 
 ## ⚙️ Requirements
 

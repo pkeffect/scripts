@@ -5,6 +5,26 @@ outputFile="project-structure.txt"
 # Get the name of this script file to exclude it from the output
 scriptName=$(basename "$0")
 
+# Statistics tracking
+total_files=0
+total_dirs=0
+total_size=0
+
+# Function to format bytes to human-readable size
+format_size() {
+    local size=$1
+    local units=("B" "KB" "MB" "GB" "TB")
+    local unit_index=0
+    local size_float=$size
+    
+    while (( $(echo "$size_float >= 1024" | bc -l) )) && (( unit_index < 4 )); do
+        size_float=$(echo "scale=2; $size_float / 1024" | bc)
+        ((unit_index++))
+    done
+    
+    printf "%.2f %s" "$size_float" "${units[$unit_index]}"
+}
+
 echo "Generating project structure..."
 
 # --- Step 1: Create the output file and write the header ---
@@ -57,16 +77,22 @@ process_directory() {
         fi
 
         if [[ -d "$fullPath" ]]; then
+            ((total_dirs++))
             echo "${parentPrefix}${connector}${itemName}/"
             # Recursive call for the subdirectory
             process_directory "$fullPath" "${parentPrefix}${childPrefix}"
         else
+            ((total_files++))
+            local file_size=$(stat -c%s "$fullPath" 2>/dev/null || stat -f%z "$fullPath" 2>/dev/null || echo 0)
+            total_size=$((total_size + file_size))
             echo "${parentPrefix}${connector}${itemName}"
         fi
     done
 }
 
-# --- Step 2: Append the rest of the structure to the file ---
+# --- Step 2: Append the rest of the structure to a temp file ---
+tempFile="${outputFile}.tmp"
+
 (
     # Print the root directory name
     echo "$(basename "$PWD")/"
@@ -74,7 +100,25 @@ process_directory() {
     # Start the recursive processing from the current directory
     process_directory "." ""
 
-) >> "$outputFile"
+) > "$tempFile"
+
+# --- Step 3: Write final output with stats at top ---
+(
+    echo "# Project Directory Structure & Files"
+    echo ""
+    echo "# Statistics"
+    echo "Total Directories: $total_dirs"
+    echo "Total Files: $total_files"
+    echo "Total Size: $(format_size $total_size)"
+    echo ""
+    cat "$tempFile"
+) > "$outputFile"
+
+# Cleanup temp file
+rm "$tempFile"
 
 echo
 echo "Project structure successfully saved to $outputFile"
+echo "Total Directories: $total_dirs"
+echo "Total Files: $total_files"
+echo "Total Size: $(format_size $total_size)"
