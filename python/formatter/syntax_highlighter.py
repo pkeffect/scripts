@@ -1,6 +1,5 @@
-# syntax_highlighter.py - SAVED ON [Current Date/Time] - Ensure this version runs!
 import logging
-import os # <<< --- ADD THIS IMPORT ---
+import os
 from pygments import highlight 
 from pygments.lexers import get_lexer_by_name, guess_lexer_for_filename, guess_lexer
 from pygments.styles import get_style_by_name, get_all_styles
@@ -10,7 +9,7 @@ import tkinter as tk
 logger = logging.getLogger(__name__)
 
 TOKEN_CONFIG = {}
-CURRENT_PYGMENTS_STYLE_NAME = 'monokai' # Default
+CURRENT_PYGMENTS_STYLE_NAME = 'monokai'
 
 MANUAL_OVERRIDES = { 
     Token.Keyword: {'foreground': '#FF79C6'},
@@ -30,7 +29,7 @@ def _get_font_tuple(base_font_family, base_font_size, style_parts_str="normal"):
 def initialize_style(style_name='monokai', base_font_family="Consolas", base_font_size=11):
     """Initializes TOKEN_CONFIG based on a Pygments style and applies overrides."""
     global TOKEN_CONFIG, CURRENT_PYGMENTS_STYLE_NAME
-    TOKEN_CONFIG = {} # Reset
+    TOKEN_CONFIG = {}
     CURRENT_PYGMENTS_STYLE_NAME = style_name
     logger.debug(f"Initializing Pygments style: {style_name} with base font: {base_font_family} {base_font_size}pt")
 
@@ -38,10 +37,10 @@ def initialize_style(style_name='monokai', base_font_family="Consolas", base_fon
         style = get_style_by_name(style_name)
     except Exception as e:
         logger.warning(f"Pygments style '{style_name}' not found. Falling back to 'default'. Error: {e}")
-        style = get_style_by_name('default') # Fallback style
+        style = get_style_by_name('default')
         CURRENT_PYGMENTS_STYLE_NAME = 'default'
 
-    default_fg = f"#{style.style_for_token(Token.Text)['color'] or 'F8F8F2'}" # Ensure fallback hex
+    default_fg = f"#{style.style_for_token(Token.Text)['color'] or 'F8F8F2'}"
     TOKEN_CONFIG[Token.Text] = {'foreground': default_fg}
 
     for token_type, style_info in style:
@@ -70,7 +69,6 @@ def get_lexer(filename, code):
     """Gets the appropriate Pygments lexer for a filename or code snippet."""
     lexer = None
     try:
-        # Use os.path.basename for logging if filename is provided
         log_filename = os.path.basename(filename) if filename else 'code snippet'
         if filename: 
             lexer = guess_lexer_for_filename(filename, code)
@@ -126,7 +124,6 @@ def configure_tags(text_widget, style_name='monokai', base_font_family="Consolas
         text_widget.tag_configure("char_highlight_add", background="#1F542A", font=base_font_tuple) 
         text_widget.tag_configure("char_highlight_del", background="#6B2028", font=base_font_tuple) 
         text_widget.tag_configure("no_newline_marker", foreground="#C87A23", font=_get_font_tuple(base_font_family, base_font_size - 1, "italic"))
-        # Side-by-side specific tags added here as well for consistency
         text_widget.tag_configure("line_del_bg", background="#401C1F", font=base_font_tuple) 
         text_widget.tag_configure("line_add_bg", background="#163B1F", font=base_font_tuple) 
         text_widget.tag_configure("line_changed_bg", background="#443A1F", font=base_font_tuple) 

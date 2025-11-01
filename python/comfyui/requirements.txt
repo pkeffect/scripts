@@ -1,5 +1,3 @@
-tkinter
 tkinterdnd2
 Pillow
 pyperclip
-regex
