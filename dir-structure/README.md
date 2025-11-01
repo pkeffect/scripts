@@ -81,11 +81,11 @@ The scripts automatically exclude:
 
 The generated `project-structure.txt` file contains:
 - Header indicating it's a project structure
+- Statistics summary at the top (total directories, files, and size)
 - Root directory name
 - Complete tree with proper indentation
 - Files listed before directories at each level
 - Unix-style tree characters (`├──`, `└──`, `│`)
-- Statistics summary (total directories, files, and size)
 
 ## ⚙️ Requirements
 
