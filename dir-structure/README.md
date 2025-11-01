@@ -6,17 +6,14 @@ Cross-platform scripts that generate a visual tree representation of your projec
 
 These scripts recursively scan your project directory and create a clean, formatted tree structure showing all files and folders. The output is saved to `project-structure.txt` in the same directory where the script is run.
 
-## Why I Use it
-
-Sometimes LLMs like to start creating stuff they shouldn't. I like to add the projects structure to help ground them as part of the prompt engineering. 
-
 ## 📦 Available Scripts
 
 - **`dir-structure.py`** - Python version (cross-platform)
 - **`dir-structure.sh`** - Bash version (Linux/Mac/WSL)
-- **`dir-structure.bat`** - Batch version (Windows)
+- **`dir-structure.bat`** - Batch version (Windows CMD)
+- **`dir-structure.ps1`** - PowerShell version (Windows/Linux/Mac)
 
-All three scripts produce identical output.
+All four scripts produce identical output.
 
 ## 🚀 Usage
 
@@ -34,6 +31,11 @@ chmod +x dir-structure.sh
 ### Windows Batch
 ```cmd
 dir-structure.bat
+```
+
+### PowerShell
+```powershell
+.\dir-structure.ps1
 ```
 
 ## 📋 Example Output
@@ -83,6 +85,7 @@ The generated `project-structure.txt` file contains:
 - **Python**: Python 3.x (no external dependencies)
 - **Bash**: Standard bash shell
 - **Batch**: Windows Command Prompt
+- **PowerShell**: PowerShell 5.1+ (Windows/Linux/Mac)
 
 ## 📝 Notes
 
