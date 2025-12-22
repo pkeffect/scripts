@@ -1,7 +1,6 @@
-<!-- VERSION: 1.0.0 -->
-# Comprehensive Music Production & Development Reference
+# Comprehensive Development Reference Links
 
-A complete reference guide covering Browser APIs, programming libraries, electronic instruments, digital audio workstations, VST plugins, and studio hardware.
+A comprehensive list of links covering Browser APIs, programming libraries, electronic instruments, digital audio workstations, VST plugins, and studio hardware.
 
 ---
 
@@ -9,14 +8,26 @@ A complete reference guide covering Browser APIs, programming libraries, electro
 
 1. [Browser APIs](#browser-apis)
 2. [JavaScript Libraries & Frameworks](#javascript-libraries--frameworks)
-3. [Python Packages & Libraries](#python-packages--libraries)
-4. [Developer Tools, Concepts & Technologies](#developer-tools-concepts--technologies)
-5. [Electronic Keyboards & Synthesizers](#electronic-keyboards--synthesizers)
-6. [Drum Machines](#drum-machines)
-7. [Samplers](#samplers)
-8. [Digital Audio Workstations (DAWs)](#digital-audio-workstations-daws)
-9. [VST Plugins](#vst-plugins)
-10. [Studio Hardware & Equipment](#studio-hardware--equipment)
+3. [Video Playback & Media Players](#video-playback--media-players)
+4. [Streaming & Video Protocol Libraries](#streaming--video-protocol-libraries)
+5. [Media Processing & Utilities](#media-processing--utilities)
+6. [2D Game Engines & Frameworks](#2d-game-engines--frameworks)
+7. [Rendering & Graphics Libraries](#rendering--graphics-libraries)
+8. [3D Game Engines & Graphics](#3d-game-engines--graphics)
+9. [Physics Engines](#physics-engines)
+10. [Entity-Component Systems (ECS)](#entity-component-systems-ecs)
+11. [Audio & Input Libraries](#audio--input-libraries)
+12. [Networking & Multiplayer](#networking--multiplayer)
+13. [Cross-Platform & Compilation Targets](#cross-platform--compilation-targets)
+14. [Legacy & Historical Libraries](#legacy--historical-libraries)
+15. [Python Packages & Libraries](#python-packages--libraries)
+16. [Developer Tools, Concepts & Technologies](#developer-tools-concepts--technologies)
+17. [Electronic Keyboards & Synthesizers](#electronic-keyboards--synthesizers)
+18. [Drum Machines](#drum-machines)
+19. [Samplers](#samplers)
+20. [Digital Audio Workstations (DAWs)](#digital-audio-workstations-daws)
+21. [VST Plugins](#vst-plugins)
+22. [Studio Hardware & Equipment](#studio-hardware--equipment)
 
 ---
 
@@ -146,8 +157,6 @@ A complete reference guide covering Browser APIs, programming libraries, electro
 - [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API) - Handles voice recognition (speech-to-text) and speech synthesis (text-to-speech).
 - [Window Controls Overlay API](https://developer.mozilla.org/en-US/docs/Web/API/Window_Controls_Overlay_API) - Provides control over the title bar area in PWAs.
 
----
-
 ## JavaScript Libraries & Frameworks
 
 ### UI Frameworks & Libraries
@@ -203,6 +212,90 @@ A complete reference guide covering Browser APIs, programming libraries, electro
 - [Sails.js](https://sailsjs.com/) - MVC framework for Node.js, inspired by Rails.
 - [SvelteKit](https://kit.svelte.dev/) - Framework for building Svelte applications.
 - [tRPC](https://trpc.io/) - End-to-end typesafe APIs without schemas or code generation.
+
+## Video Playback & Media Players
+
+- [Video.js](https://github.com/videojs/video.js) - HTML5 video player framework with a consistent UI, plugin ecosystem, and adaptive streaming support.
+- [Plyr](https://github.com/sampotts/plyr) - Lightweight, accessible HTML5 media player supporting native video, YouTube, and Vimeo.
+- [mediaelement.js](https://github.com/mediaelement/mediaelement) - Unified HTML5 media player abstraction with plugin support for HLS, DASH, and external providers.
+- [jPlayer](https://github.com/jplayer/jPlayer) - jQuery-based audio and video player library providing a consistent API over HTML5 media elements.
+- [ReactPlayer](https://github.com/cookpete/react-player) - React component wrapper for playing video and audio from multiple online and local sources.
+- [Amalia.js](https://github.com/ina-foss/amalia.js) - Advanced HTML5 video player focused on metadata, annotations, and timeline-driven interactions.
+
+## Streaming & Video Protocol Libraries
+
+- [hls.js](https://github.com/video-dev/hls.js) - JavaScript implementation of HTTP Live Streaming using Media Source Extensions.
+- [dash.js](https://github.com/Dash-Industry-Forum/dash.js) - Reference JavaScript client implementation for MPEG-DASH adaptive streaming.
+- [flv.js](https://github.com/bilibili/flv.js) - Enables FLV video playback in browsers using Media Source Extensions.
+- [Shaka Player](https://github.com/shaka-project/shaka-player) - Adaptive media streaming player supporting DASH, HLS, and DRM via EME.
+
+## Media Processing & Utilities
+
+- [ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm) - WebAssembly port of FFmpeg for client-side video and audio processing.
+- [mp4box.js](https://github.com/gpac/mp4box.js) - JavaScript library for parsing, segmenting, and inspecting MP4 files.
+- [mux.js](https://github.com/videojs/mux.js) - Utilities for transmuxing media container formats in JavaScript.
+- [Broadway.js](https://github.com/mbebenita/Broadway) - JavaScript H.264 decoder using Canvas rendering.
+
+## 2D Game Engines & Frameworks
+
+- [Phaser](https://github.com/phaserjs/phaser) - Full-featured 2D HTML5 game framework supporting Canvas and WebGL rendering.
+- [melonJS](https://github.com/melonjs/melonJS) - Lightweight 2D game engine with entity management, collision detection, and asset loading.
+- [Crafty](https://github.com/craftyjs/Crafty) - Modular 2D game engine using an entity-component system.
+- [Quintus](https://github.com/cykod/Quintus) - Minimalist modular HTML5 game engine focused on rapid development.
+- [Kiwi.js](https://github.com/gamelab/kiwi.js) - Game framework emphasizing performance and ease of use for 2D browser games.
+- [Jaws](https://github.com/jawsjs/jaws) - Simple HTML5 game library with sprite handling and collision utilities.
+- [Cocos2d-JS](https://github.com/cocos2d/cocos2d-js) - JavaScript version of the Cocos2d engine for Canvas and WebGL games.
+
+## Rendering & Graphics Libraries
+
+- [PixiJS](https://github.com/pixijs/pixijs) - High-performance 2D rendering engine built on WebGL.
+- [Stage.js](https://github.com/shakiba/stage.js) - 2D rendering and animation engine optimized for game-style scene graphs.
+- [Konva.js](https://github.com/konvajs/konva) - Canvas-based 2D drawing and interaction library useful for game editors and UI layers.
+- [Paper.js](https://github.com/paperjs/paper.js) - Vector graphics scripting framework for Canvas-based visuals and interactions.
+
+## 3D Game Engines & Graphics
+
+- [Three.js](https://github.com/mrdoob/three.js) - Widely adopted 3D graphics library built on WebGL.
+- [Babylon.js](https://github.com/BabylonJS/Babylon.js) - Full-scale 3D engine supporting physics, animations, audio, and advanced rendering.
+- [PlayCanvas Engine](https://github.com/playcanvas/engine) - Open-source WebGL game engine for production-grade 3D games.
+- [A-Frame](https://github.com/aframevr/aframe) - Entity-component framework for WebVR and WebXR experiences.
+- [Gladius](https://github.com/gladiusjs/gladius-core) - Modular JavaScript 3D engine with entity-component architecture.
+
+## Physics Engines
+
+- [Matter.js](https://github.com/liabru/matter-js) - 2D rigid-body physics engine for games and simulations.
+- [Planck.js](https://github.com/shakiba/planck.js) - JavaScript rewrite of the Box2D physics engine.
+- [p2.js](https://github.com/schteppe/p2.js) - 2D physics engine supporting collision detection and constraints.
+- [Cannon.js](https://github.com/schteppe/cannon.js) - Lightweight 3D physics engine often paired with Three.js.
+
+## Entity-Component Systems (ECS)
+
+- [Ash.js](https://github.com/brejep/ash-js) - Entity-component framework for structuring game logic.
+- [Darling.js](https://github.com/darlingjs/darlingjs) - ECS-based JavaScript game engine with modular dependency injection.
+- [bitecs](https://github.com/NateTheGreatt/bitecs) - High-performance ECS library optimized for real-time applications.
+
+## Audio & Input Libraries
+
+- [Howler.js](https://github.com/goldfire/howler.js) - Audio playback library designed for games and interactive media.
+- [Tone.js](https://github.com/Tonejs/Tone.js) - Web Audio framework for music and sound synthesis.
+- [Gamepad.js](https://github.com/neogeek/gamepad.js) - Wrapper library for the browser Gamepad API.
+- [KeyboardJS](https://github.com/RobertWHurst/KeyboardJS) - Keyboard input handling library with combo and sequence support.
+
+## Networking & Multiplayer
+
+- [Colyseus](https://github.com/colyseus/colyseus) - Multiplayer game server framework with JavaScript client support.
+- [Socket.IO](https://github.com/socketio/socket.io) - Real-time bidirectional communication library widely used in multiplayer games.
+- [PeerJS](https://github.com/peers/peerjs) - WebRTC abstraction for peer-to-peer networking.
+
+## Cross-Platform & Compilation Targets
+
+- [OpenFL](https://github.com/openfl/openfl) - Cross-platform framework modeled after Flash APIs that can target JavaScript.
+- [Haxe](https://github.com/HaxeFoundation/haxe) - Strongly typed language that compiles to JavaScript and is widely used for games.
+
+## Legacy & Historical Libraries
+
+- [Gamecore.js](https://github.com/playcraft/gamecore.js) - Early foundational JavaScript game framework.
+- [Traffic Cone](https://github.com/andyhall/TrafficCone) - Tile-based 2D game engine for HTML5.
 
 ### Data Visualization & Charting
 
@@ -432,7 +525,6 @@ A complete reference guide covering Browser APIs, programming libraries, electro
 - [OpenCV-Python](https://pypi.org/project/opencv-python/) - Computer vision library.
 - [Pillow](https://python-pillow.org/) - Friendly Python Imaging Library fork.
 - [PyAV](https://pyav.org/) - Pythonic bindings for FFmpeg.
-- [pydub](https://github.com/jiaaro/pydub) - Manipulate audio with a simple interface.
 - [scikit-image](https://scikit-image.org/) - Collection of image processing algorithms.
 
 ### Audio Processing
@@ -1384,8 +1476,3 @@ The central hub of any recording studio, converting analog signals to digital an
 - [MIDI Cables](https://www.livewireadvantage.com/) - 5-pin DIN MIDI connections.
 - [USB Cables](https://www.anker.com/) - USB-A, USB-B, USB-C for audio interfaces.
 - [Thunderbolt Cables](https://www.apple.com/) - High-speed audio interface connections.
-
----
-
-*Document Version: 1.0.0*
-*Last Updated: 2025*
