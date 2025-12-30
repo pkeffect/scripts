@@ -1,6 +1,6 @@
 # Directory Controller
 
-![Version](https://img.shields.io/badge/version-v0.0.6-blue.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-v0.0.7-blue.svg?style=flat-square)
 ![Python](https://img.shields.io/badge/python-3.6+-green.svg?style=flat-square)
 ![Platform](https://img.shields.io/badge/platform-win%20%7C%20mac%20%7C%20linux-lightgrey.svg?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-orange.svg?style=flat-square)
@@ -20,16 +20,15 @@ It solves two specific problems:
 *   **Universal Parsing:** Intelligently parses various tree formats (Standard Tree `├──`, ASCII `+--`, Markdown Lists `-`, or Tab indentation).
 *   **Smart Detection:** Automatically finds structure files (e.g., `structure.txt`, `tree.md`) without needing specific filenames.
 *   **Auto-Scaffolding:** Creates directories and empty placeholder files based on the input map.
-*   **File Relocation:** If a file exists in the root directory but belongs in a subfolder according to the map, the script **moves** it automatically.
 *   **Context-Aware:** Uses heuristics (file extensions, trailing slashes, indentation lookahead) to distinguish files from folders even if the LLM output is messy.
 
-### New in v0.0.6 (Security & Audit Updates)
-*   **Gitignore Integration:** Respects your project's `.gitignore` file during scanning, automatically excluding build artifacts, logs, secrets, and temp files from the generated tree. It now checks both **filenames** and **relative paths**.
+### New in v0.0.7 (Enterprise-Grade Safety)
+*   **Gitignore Integration:** Respects your project's `.gitignore` file during scanning, automatically excluding build artifacts, logs, secrets, and temp files. Checks both **filenames** and **relative paths**.
+*   **Infinite Loop Protection (Symlinks):** The scanner now detects Symbolic Links. It identifies them in the output (e.g., `link -> target`) but **stops recursion** immediately. This prevents the script from freezing on circular file paths or duplicating massive libraries.
+*   **Smart Collision Resolution:** If you try to move a file to a folder where it already exists, the script **will not overwrite it**. Instead, it automatically renames the incoming file (e.g., `script.py` → `script_1.py`) to ensure zero data loss.
+*   **Binary & Encoding Resilience:** The file reader now detects binary files (like images or compiled executables) and skips them instead of crashing. It also cycles through multiple encodings (`utf-8-sig`, `latin-1`) to handle files created in different environments (e.g., Windows Notepad).
 *   **Root-Wrap Prevention:** Detects if the LLM has hallucinated a root folder that matches your current directory name. It automatically un-nests the structure to prevent `project/project/src` redundancies.
 *   **Security Sanitization:** Aggressively filters file paths to remove directory traversal attacks (`../`) and characters invalid on Windows (`<>:"/\|?*`).
-*   **Encoding Resilience:** Now supports `utf-8-sig` to handle Byte Order Marks (BOM) common in files edited with Windows Notepad, preventing crash-on-read errors.
-*   **Safety First:** Forces relative paths to prevent accidental writing to your drive root.
-*   **Zero Dependencies:** Runs on standard Python 3 libraries. No `pip install` required.
 
 ---
 
@@ -71,7 +70,7 @@ This looks for a structure file (e.g., `structure.txt`, `tree.md`) and builds th
 4.  The script will:
     *   **Analyze:** Parse the text file and identify nodes.
     *   **Sanitize:** Clean up invalid characters and resolve root-wrapping issues.
-    *   **Execute:** Create missing directories, create empty placeholder files, and move existing files to their new locations.
+    *   **Execute:** Create missing directories, create empty placeholder files, and move existing files to their new locations (with collision protection).
 
 ---
 
@@ -118,7 +117,10 @@ When parsing a text file, the script must decide if a line represents a **File**
 3.  **Indentation Lookahead:** If line `A` is followed by line `B`, and line `B` is indented *deeper* than line `A`, then line `A` is treated as a **Directory** (files cannot contain children).
 4.  **Common Naming Conventions:** If ambiguous, names like `src`, `dist`, `bin`, `assets`, `config`, `tests` are treated as **Directories**.
 
-### 2. The "Smart" Security Layers (v0.0.6)
+### 2. The "Smart" Security Layers (v0.0.7)
+*   **Non-Destructive Operations:**
+    *   This script **NEVER deletes files**.
+    *   This script **NEVER overwrites files**. If a move operation conflicts, it renames the file to `filename_1.ext`.
 *   **Root Wrapper Detection:**
     *   *Problem:* You are in `my-app`. The LLM outputs a tree starting with `my-app/src/...`.
     *   *Old Behavior:* You ended up with `my-app/my-app/src/...`.
@@ -127,8 +129,9 @@ When parsing a text file, the script must decide if a line represents a **File**
     *   Leading slashes (`/var/www`) are stripped to force relative paths (`var/www`).
     *   Windows-invalid characters (`<`, `>`, `:`, `"`, `|`, `?`, `*`) are stripped from filenames to prevent OS errors.
     *   `..` is removed to prevent directory traversal attacks.
-*   **Encoding Safety:**
-    *   The file reader now uses `utf-8-sig`. This handles the "Byte Order Mark" (BOM) that Windows Notepad silently adds to the start of text files, which previously caused Python scripts to crash or misread the first line of a file.
+*   **Symlink & Binary Safety:**
+    *   The scanner detects symbolic links and refuses to follow them, preventing infinite loops.
+    *   The file reader checks for binary content (Null bytes) to prevent the script from trying to parse images or executables as text.
 
 ### 3. Exclusion Mechanisms
 *   **System Exclusions:** The script explicitly ignores its own source file, `.git`, `node_modules`, `.env`, `.DS_Store`, and `__pycache__` to prevent clutter.
