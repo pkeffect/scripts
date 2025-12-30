@@ -3,7 +3,7 @@ import sys
 import shutil
 import re
 import glob
-import fnmatch  # <--- Added for pattern matching
+import fnmatch
 
 # --- OS Specific: Enable ANSI Colors on Windows ---
 if os.name == 'nt':
@@ -23,11 +23,9 @@ SYSTEM_EXCLUDES = {
 
 # --- Styling & UI ---
 class Style:
-    # ANSI Colors
     RESET = '\033[0m'
     BOLD = '\033[1m'
     DIM = '\033[2m'
-    
     BLUE = '\033[34m'
     CYAN = '\033[36m'
     GREEN = '\033[32m'
@@ -42,33 +40,21 @@ def print_step(text):
     print(f"\n{Style.BOLD}{Style.CYAN}→ {text}{Style.RESET}")
 
 def log_action(action, path, details="", status="ok"):
-    """Professional aligned logging"""
-    # Define colors based on status/action
     color = Style.GREEN
     if action == "DIR": color = Style.BLUE + Style.BOLD
     if action == "MOVE": color = Style.YELLOW
     if action == "SKIP": color = Style.DIM
     if action == "ERR": color = Style.RED
 
-    # Icons (ASCII safe)
-    icon_map = {
-        "DIR":  "[DIR ]",
-        "NEW":  "[FILE]",
-        "MOVE": "[MOVE]",
-        "SKIP": "[SKIP]",
-        "ERR":  "[FAIL]"
-    }
+    icon_map = {"DIR": "[DIR ]", "NEW": "[FILE]", "MOVE": "[MOVE]", "SKIP": "[SKIP]", "ERR": "[FAIL]"}
     icon = icon_map.get(action, "[INFO]")
     
-    # Calculate visual path (relative to cwd for cleanliness)
     try:
         display_path = os.path.relpath(path)
     except ValueError:
         display_path = path
 
-    # Format: [ACTION]  Path   (Details)
     prefix = f"{color}{icon}{Style.RESET}"
-    
     if details:
         print(f" {prefix}  {display_path:<50} {Style.DIM}({details}){Style.RESET}")
     else:
@@ -82,7 +68,8 @@ def is_likely_structure_file(filepath):
     if os.path.isdir(filepath): return False
     tree_markers = [r'├──', r'└──', r'\+--', r'\|--', r'\|\s\s', r'^\s*-\s']
     try:
-        with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+        # Use utf-8-sig to handle BOM from Notepad, replace errors to prevent crash
+        with open(filepath, 'r', encoding='utf-8-sig', errors='replace') as f:
             head = [next(f) for _ in range(15)]
         content = "".join(head)
         for marker in tree_markers:
@@ -93,15 +80,12 @@ def is_likely_structure_file(filepath):
 
 def find_structure_file():
     print_step("Scanning for structure file...")
-    
-    # Priority matches
     candidates = ['directory-structure.txt', 'dir-structure.txt', 'structure.txt', 'tree.txt']
     for c in candidates:
         if os.path.exists(c):
             print(f" {Style.GREEN}✓ Found:{Style.RESET} {c}")
             return c
             
-    # Fuzzy matches
     files = glob.glob("*.txt") + glob.glob("*.md")
     files = [f for f in files if f not in SYSTEM_EXCLUDES]
     for f in files:
@@ -115,6 +99,20 @@ def find_structure_file():
 # ==============================================================================
 # --- PART 2: PARSING (Robust Logic) ---
 # ==============================================================================
+
+def sanitize_name(name):
+    """
+    Security: Remove characters invalid in Windows paths and prevent directory traversal.
+    """
+    # 1. Remove Traversal
+    if '..' in name:
+        name = name.replace('..', '')
+    
+    # 2. Windows Invalid Chars: < > : " / \ | ? *
+    # Note: We allow / and \ momentarily for direction but identifying nodes strips them.
+    # Here we strip purely invalid characters for a filename.
+    name = re.sub(r'[<>:"|?*]', '', name)
+    return name.strip()
 
 def parse_line_content(line):
     line = line.split('#')[0].rstrip()
@@ -136,9 +134,11 @@ def identify_nodes(lines):
         name, indent = parse_line_content(line)
         if not name: continue
         
-        # Sanitization (Prevent root logic errors)
+        # Cleanup quotes and slashes
         name = name.strip('*"`\'')
-        name = name.lstrip('/\\') # Force relative path
+        name = name.lstrip('/\\') 
+        name = sanitize_name(name) # Apply security sanitization
+        
         if not name: continue
 
         nodes.append({'name': name, 'indent': indent, 'is_dir': None})
@@ -146,18 +146,25 @@ def identify_nodes(lines):
     # Type Inference
     for i, node in enumerate(nodes):
         name = node['name']
+        
+        # Explicit dir syntax
         if name.endswith('/') or name.endswith('\\'):
             node['is_dir'] = True
             node['name'] = name.strip('/\\')
             continue
+            
+        # File extension syntax
         if '.' in name and not name.startswith('.'):
             node['is_dir'] = False
             continue
+            
+        # Lookahead syntax (if has children, must be dir)
         if i + 1 < len(nodes) and nodes[i+1]['indent'] > node['indent']:
             node['is_dir'] = True
             continue
         
-        common_dirs = {'src', 'public', 'assets', 'components', 'bin', 'lib', 'tests', 'docs', 'config', 'dist', 'build'}
+        # Common conventions
+        common_dirs = {'src', 'public', 'assets', 'components', 'bin', 'lib', 'tests', 'docs', 'config', 'dist', 'build', 'utils', 'styles'}
         node['is_dir'] = True if name.lower() in common_dirs else False
             
     return nodes
@@ -165,35 +172,46 @@ def identify_nodes(lines):
 def build_tree_from_nodes(nodes):
     path_stack = [] 
     stats = {'created_dirs': 0, 'created_files': 0, 'moved': 0, 'skipped': 0}
-    
+    root_dir_name = os.path.basename(os.getcwd())
+    root_path = os.getcwd()
+
     print_step("Executing Build Plan")
     print(f"{Style.DIM}{'-'*70}{Style.RESET}")
 
-    root_dir = os.getcwd()
-
-    for node in nodes:
+    for i, node in enumerate(nodes):
         name = node['name']
         indent = node['indent']
         is_dir = node['is_dir']
         
+        # --- ROOT WRAP CHECK ---
+        # If the very first node matches the current folder name, assume it's a wrapper and skip creating it.
+        # Instead, treat its children as children of the current dir.
+        if i == 0 and is_dir and name == root_dir_name:
+            path_stack.append((indent, root_path))
+            log_action("SKIP", name, "Detected Root Wrapper - Mapping to CWD")
+            continue
+        # -----------------------
+
         while path_stack and path_stack[-1][0] >= indent:
             path_stack.pop()
             
-        current_parent = path_stack[-1][1] if path_stack else root_dir
+        current_parent = path_stack[-1][1] if path_stack else root_path
         target_path = os.path.join(current_parent, name)
         
         if is_dir:
             path_stack.append((indent, target_path))
-            if not os.path.exists(target_path):
-                log_action("DIR", target_path)
-                os.makedirs(target_path, exist_ok=True)
-                stats['created_dirs'] += 1
-            else:
-                # log_action("SKIP", target_path) # Optional: reduce noise
-                pass
+            try:
+                if not os.path.exists(target_path):
+                    log_action("DIR", target_path)
+                    os.makedirs(target_path, exist_ok=True)
+                    stats['created_dirs'] += 1
+                else:
+                    pass
+            except OSError as e:
+                 log_action("ERR", target_path, str(e))
+
         else:
             if os.path.exists(target_path):
-                # log_action("SKIP", target_path, "Exists")
                 stats['skipped'] += 1
             elif os.path.exists(name) and os.path.isfile(name):
                 # Move logic
@@ -206,12 +224,15 @@ def build_tree_from_nodes(nodes):
             else:
                 # Scaffold logic
                 log_action("NEW", target_path)
-                parent = os.path.dirname(target_path)
-                if not os.path.exists(parent):
-                    os.makedirs(parent, exist_ok=True)
-                with open(target_path, 'w', encoding='utf-8') as f:
-                    f.write(f"# Placeholder for {name}")
-                stats['created_files'] += 1
+                try:
+                    parent = os.path.dirname(target_path)
+                    if not os.path.exists(parent):
+                        os.makedirs(parent, exist_ok=True)
+                    with open(target_path, 'w', encoding='utf-8') as f:
+                        f.write(f"# Placeholder for {name}")
+                    stats['created_files'] += 1
+                except Exception as e:
+                    log_action("ERR", target_path, str(e))
 
     print(f"{Style.DIM}{'-'*70}{Style.RESET}")
     print(f"{Style.BOLD}Summary:{Style.RESET} {stats['created_dirs']} Dirs | {stats['created_files']} Files | {stats['moved']} Moved")
@@ -221,10 +242,8 @@ def build_tree_from_nodes(nodes):
 # ==============================================================================
 
 def parse_gitignore(root_dir="."):
-    """Reads .gitignore and returns a list of patterns."""
     patterns = []
     gitignore_path = os.path.join(root_dir, ".gitignore")
-    
     if os.path.exists(gitignore_path):
         try:
             with open(gitignore_path, 'r', encoding='utf-8') as f:
@@ -236,15 +255,20 @@ def parse_gitignore(root_dir="."):
             pass
     return patterns
 
-def should_ignore(name, ignore_patterns):
-    """Checks if a name matches any gitignore patterns."""
-    if not ignore_patterns:
-        return False
+def should_ignore(name, relative_path, ignore_patterns):
+    """
+    Checks if a name matches any gitignore patterns.
+    Checks both filename and relative path for better coverage.
+    """
+    if not ignore_patterns: return False
+    
     for pattern in ignore_patterns:
-        # Normalize simple patterns (remove trailing slash for checking)
         clean_pattern = pattern.rstrip('/')
-        if fnmatch.fnmatch(name, clean_pattern):
-            return True
+        # Check filename (e.g. *.log)
+        if fnmatch.fnmatch(name, clean_pattern): return True
+        # Check path (e.g. build/output)
+        if fnmatch.fnmatch(relative_path, clean_pattern): return True
+        
     return False
 
 def generate_tree_string(dir_path, prefix="", stats=None, ignore_patterns=None):
@@ -253,20 +277,15 @@ def generate_tree_string(dir_path, prefix="", stats=None, ignore_patterns=None):
     
     output = ""
     try:
-        # Initial unfiltered list
         all_items = sorted(os.listdir(dir_path))
-        
-        # Filter items
         items = []
         for item in all_items:
-            # 1. System Excludes
             if item in SYSTEM_EXCLUDES: continue
-            
-            # 2. Hidden files (unless explicitly wanted, but usually we skip)
             if item.startswith('.'): continue
             
-            # 3. .gitignore Excludes
-            if should_ignore(item, ignore_patterns): continue
+            # Check ignore using relative path
+            rel_path = os.path.relpath(os.path.join(dir_path, item))
+            if should_ignore(item, rel_path, ignore_patterns): continue
             
             items.append(item)
             
@@ -292,28 +311,26 @@ def generate_structure_file():
     target_file = "directory-structure.txt"
     print_step(f"Generatng '{target_file}'...")
     
-    # 1. Load Gitignore patterns
     ignore_patterns = parse_gitignore()
     if ignore_patterns:
         print(f" {Style.DIM}i Loaded {len(ignore_patterns)} patterns from .gitignore{Style.RESET}")
 
-    # 2. Generate
     tree_str, stats = generate_tree_string(".", stats=None, ignore_patterns=ignore_patterns)
     content = f"# Generated Structure\n# Files: {stats['files']} | Dirs: {stats['dirs']}\n\n{os.path.basename(os.getcwd())}/\n{tree_str}"
     
-    with open(target_file, "w", encoding="utf-8") as f: f.write(content)
-    
-    print(f"{Style.DIM}")
-    print(tree_str.strip())
-    print(f"{Style.RESET}")
-    print(f" {Style.GREEN}✓ Success:{Style.RESET} Saved to {target_file}")
+    try:
+        with open(target_file, "w", encoding="utf-8") as f: f.write(content)
+        print(f"{Style.DIM}\n{tree_str.strip()}\n{Style.RESET}")
+        print(f" {Style.GREEN}✓ Success:{Style.RESET} Saved to {target_file}")
+    except Exception as e:
+        print(f" {Style.RED}× Error saving file:{Style.RESET} {e}")
 
 # ==============================================================================
 # --- MAIN MENU ---
 # ==============================================================================
 
 def main():
-    print_header("Directory Controller v0.0.5")
+    print_header("Directory Controller v0.0.6")
     print(f"{Style.DIM}Manage your project structure with LLM outputs.{Style.RESET}")
     print("\n1. SCAN & GENERATE 'directory-structure.txt'")
     print("2. READ & BUILD structure from file")
@@ -325,17 +342,22 @@ def main():
     elif choice == '2':
         target_file = find_structure_file()
         if target_file:
-            with open(target_file, 'r', encoding='utf-8') as f: lines = f.readlines()
+            try:
+                # utf-8-sig covers BOM, replace prevents crash on binary garbage
+                with open(target_file, 'r', encoding='utf-8-sig', errors='replace') as f: 
+                    lines = f.readlines()
+            except Exception as e:
+                print(f" {Style.RED}× Error reading file:{Style.RESET} {e}")
+                return
+
             nodes = identify_nodes(lines)
             
             if not nodes:
                 print(f" {Style.RED}× Error:{Style.RESET} No valid nodes found in file.")
                 return
 
-            # Preview
-            print_step("Preview")
-            cwd = os.getcwd()
-            print(f" Working Root: {Style.YELLOW}{cwd}{Style.RESET}")
+            print_step(f"Preview: {target_file}")
+            print(f" Working Root: {Style.YELLOW}{os.getcwd()}{Style.RESET}")
             print(f" Parsed Items: {Style.BOLD}{len(nodes)}{Style.RESET}")
             
             confirm = input(f"\nProceed with changes? ({Style.BOLD}y/n{Style.RESET}): ").lower()
@@ -348,4 +370,8 @@ def main():
         print("Invalid choice.")
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print(f"\n{Style.YELLOW}\nExited by user.{Style.RESET}")
+        sys.exit(0)
