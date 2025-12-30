@@ -3,6 +3,7 @@ import sys
 import shutil
 import re
 import glob
+import fnmatch  # <--- Added for pattern matching
 
 # --- OS Specific: Enable ANSI Colors on Windows ---
 if os.name == 'nt':
@@ -219,22 +220,68 @@ def build_tree_from_nodes(nodes):
 # --- PART 3: GENERATION ---
 # ==============================================================================
 
-def generate_tree_string(dir_path, prefix="", stats=None):
+def parse_gitignore(root_dir="."):
+    """Reads .gitignore and returns a list of patterns."""
+    patterns = []
+    gitignore_path = os.path.join(root_dir, ".gitignore")
+    
+    if os.path.exists(gitignore_path):
+        try:
+            with open(gitignore_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#"):
+                        patterns.append(line)
+        except Exception:
+            pass
+    return patterns
+
+def should_ignore(name, ignore_patterns):
+    """Checks if a name matches any gitignore patterns."""
+    if not ignore_patterns:
+        return False
+    for pattern in ignore_patterns:
+        # Normalize simple patterns (remove trailing slash for checking)
+        clean_pattern = pattern.rstrip('/')
+        if fnmatch.fnmatch(name, clean_pattern):
+            return True
+    return False
+
+def generate_tree_string(dir_path, prefix="", stats=None, ignore_patterns=None):
     if stats is None: stats = {'files': 0, 'dirs': 0}
+    if ignore_patterns is None: ignore_patterns = []
+    
     output = ""
     try:
-        items = sorted([i for i in os.listdir(dir_path) if i not in SYSTEM_EXCLUDES and not i.startswith('.')])
+        # Initial unfiltered list
+        all_items = sorted(os.listdir(dir_path))
+        
+        # Filter items
+        items = []
+        for item in all_items:
+            # 1. System Excludes
+            if item in SYSTEM_EXCLUDES: continue
+            
+            # 2. Hidden files (unless explicitly wanted, but usually we skip)
+            if item.startswith('.'): continue
+            
+            # 3. .gitignore Excludes
+            if should_ignore(item, ignore_patterns): continue
+            
+            items.append(item)
+            
     except OSError: return "", stats
 
     for i, item in enumerate(items):
         full_path = os.path.join(dir_path, item)
         is_last = (i == len(items) - 1)
         connector = "└── " if is_last else "├── "
+        
         if os.path.isdir(full_path):
             stats['dirs'] += 1
             output += f"{prefix}{connector}{item}/\n"
             new_prefix = prefix + ("    " if is_last else "│   ")
-            child, _ = generate_tree_string(full_path, new_prefix, stats)
+            child, _ = generate_tree_string(full_path, new_prefix, stats, ignore_patterns)
             output += child
         else:
             stats['files'] += 1
@@ -245,7 +292,13 @@ def generate_structure_file():
     target_file = "directory-structure.txt"
     print_step(f"Generatng '{target_file}'...")
     
-    tree_str, stats = generate_tree_string(".")
+    # 1. Load Gitignore patterns
+    ignore_patterns = parse_gitignore()
+    if ignore_patterns:
+        print(f" {Style.DIM}i Loaded {len(ignore_patterns)} patterns from .gitignore{Style.RESET}")
+
+    # 2. Generate
+    tree_str, stats = generate_tree_string(".", stats=None, ignore_patterns=ignore_patterns)
     content = f"# Generated Structure\n# Files: {stats['files']} | Dirs: {stats['dirs']}\n\n{os.path.basename(os.getcwd())}/\n{tree_str}"
     
     with open(target_file, "w", encoding="utf-8") as f: f.write(content)
@@ -260,7 +313,7 @@ def generate_structure_file():
 # ==============================================================================
 
 def main():
-    print_header("Directory Controller v0.0.4")
+    print_header("Directory Controller v0.0.5")
     print(f"{Style.DIM}Manage your project structure with LLM outputs.{Style.RESET}")
     print("\n1. SCAN & GENERATE 'directory-structure.txt'")
     print("2. READ & BUILD structure from file")
