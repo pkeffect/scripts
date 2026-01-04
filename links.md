@@ -1,5 +1,3 @@
-# Comprehensive Development Reference Links
-
 A comprehensive list of links covering Browser APIs, programming libraries, electronic instruments, digital audio workstations, VST plugins, and studio hardware.
 
 ---
